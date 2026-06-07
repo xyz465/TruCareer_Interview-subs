@@ -742,7 +742,7 @@ async function submitForm() {
   btn.disabled = true;
 
   try {
-    if (GOOGLE_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbza1YUfx6si6ql8GyPJoOLoG3e98SNuzN1MufIs91iuvmMt7KZJGgw9dDwaIk-0h-Q1Tw/exec') {
+    if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
       // Real submission to Google Sheets
       await fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
