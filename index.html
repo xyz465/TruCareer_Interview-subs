@@ -1,4 +1,10 @@
 <!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║  TRUCAREER — INTERVIEW COLLECTION FORM                          ║
+║  Setup: see trucareer_form_setup.md for Google Sheets backend   ║
+╚══════════════════════════════════════════════════════════════════╝
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -695,24 +701,85 @@ function showQ3() {
 }
 
 // ── SUBMIT ────────────────────────────────────────────────
-function submitForm() {
-  // Collect all state
-  state.role = document.getElementById('role').value.trim();
-  state.company = document.getElementById('company').value.trim();
-  state.email = document.getElementById('email').value.trim();
-  state.q1 = document.getElementById('q1text').value.trim();
-  state.q2 = document.getElementById('q2text').value.trim();
-  state.q3 = document.getElementById('q3text').value.trim();
-  state.extra = document.getElementById('extraNote').value.trim();
+// ┌─────────────────────────────────────────────────────────┐
+// │  SETUP INSTRUCTIONS — READ BEFORE DEPLOYING            │
+// │                                                         │
+// │  1. Go to script.google.com                             │
+// │  2. Create a new project                                │
+// │  3. Paste the Apps Script code from the README below    │
+// │  4. Deploy as Web App (execute as Me, anyone can access)│
+// │  5. Copy the deployment URL                             │
+// │  6. Replace PASTE_YOUR_SCRIPT_URL_HERE with that URL    │
+// └─────────────────────────────────────────────────────────┘
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbza1YUfx6si6ql8GyPJoOLoG3e98SNuzN1MufIs91iuvmMt7KZJGgw9dDwaIk-0h-Q1Tw/exec';
 
-  // Simulate contributor number
+async function submitForm() {
+  // Collect all state
+  state.role        = document.getElementById('role').value.trim();
+  state.company     = document.getElementById('company').value.trim();
+  state.email       = document.getElementById('email').value.trim();
+  state.q1          = document.getElementById('q1text').value.trim();
+  state.q2          = document.getElementById('q2text').value.trim();
+  state.q3          = document.getElementById('q3text').value.trim();
+  state.extra       = document.getElementById('extraNote').value.trim();
+  state.submitted_at = new Date().toISOString();
+
+  // Collect chip selections
+  state.department   = getSelectedChip('deptChips');
+  state.experience   = getSelectedOption('expOptions');
+  state.year         = getSelectedChip('yearChips');
+  state.q1type       = getSelectedChip('q1type');
+  state.q2type       = getSelectedChip('q2type');
+  state.q3type       = getSelectedChip('q3type');
+  state.outcome      = document.querySelector('.outcome-chip.selected')?.dataset.val || '';
+  state.difficulty   = getSelectedChip('diffChips');
+  state.source       = getSelectedChip('sourceChips');
+
+  // Show loading state on button
+  const btn = document.querySelector('#s7 .btn-primary');
+  const originalText = btn.textContent;
+  btn.textContent = 'Submitting...';
+  btn.disabled = true;
+
+  try {
+    if (GOOGLE_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbza1YUfx6si6ql8GyPJoOLoG3e98SNuzN1MufIs91iuvmMt7KZJGgw9dDwaIk-0h-Q1Tw/exec') {
+      // Real submission to Google Sheets
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // required for Google Apps Script
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state)
+      });
+    } else {
+      // Demo mode — just log to console
+      console.log('=== TRUCAREER SUBMISSION ===');
+      console.log(JSON.stringify(state, null, 2));
+      console.log('(No script URL set — data logged to console only)');
+      await new Promise(r => setTimeout(r, 600)); // simulate network
+    }
+  } catch(e) {
+    // no-cors mode always throws on response parsing, this is expected
+    console.log('Submission sent (no-cors mode)');
+  }
+
+  // Update contributor number (simulated — real number comes from your sheet)
   contribCounter++;
   document.getElementById('contribNum').textContent = '#' + contribCounter.toLocaleString();
 
-  // In production: POST state to your backend / Google Sheets webhook / Tally
-  console.log('Submitted:', state);
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbza1YUfx6si6ql8GyPJoOLoG3e98SNuzN1MufIs91iuvmMt7KZJGgw9dDwaIk-0h-Q1Tw/exec';
+  btn.textContent = originalText;
+  btn.disabled = false;
+
   go(8);
+}
+
+function getSelectedChip(groupId) {
+  const el = document.querySelector('#' + groupId + ' .chip.selected');
+  return el ? el.dataset.val : '';
+}
+
+function getSelectedOption(groupId) {
+  const el = document.querySelector('#' + groupId + ' .option-card.selected');
+  return el ? el.dataset.val : '';
 }
 
 // ── SHARE ─────────────────────────────────────────────────
@@ -724,7 +791,7 @@ function copyLink() {
 
 function shareWhatsApp() {
   const text = encodeURIComponent(
-    "I shared my interview experience with TruCareer - Bangladesh's first career intelligence platform. Takes 3 minutes and helps everyone prepare better. Check it out: " + window.location.href
+    "I just shared my interview experience with TruCareer — Bangladesh's first career intelligence platform. Takes 3 minutes and helps everyone prepare better. Check it out: " + window.location.href
   );
   window.open('https://wa.me/?text=' + text, '_blank');
 }
